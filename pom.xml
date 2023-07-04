@@ -13,6 +13,7 @@
     <module>load-vintagestore</module>
     <module>ui-vintagestore</module>
     <module>rest-number</module>
+    <module>rest-book</module>
   </modules>
   <build>
     <pluginManagement>
