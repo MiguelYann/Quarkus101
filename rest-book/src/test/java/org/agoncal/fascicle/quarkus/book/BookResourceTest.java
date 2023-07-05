@@ -17,6 +17,7 @@ import java.net.URL;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
+import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 import static org.hamcrest.CoreMatchers.is;
 
 import static io.restassured.RestAssured.given;
@@ -70,14 +71,6 @@ public class BookResourceTest {
   private static int nbBooks;
   private static String bookId;
 
-  @Test
-  public void testHelloEndpoint() {
-    given()
-      .when().get("/api/books")
-      .then()
-      .statusCode(200)
-      .body(is("Hello RESTEasy"));
-  }
 
   @Test
   @Order(1)
@@ -224,6 +217,67 @@ public class BookResourceTest {
       .post("/api/books").
       then()
       .statusCode(BAD_REQUEST.getStatusCode());
+  }
+
+  @Test
+  @Order(5)
+  void shouldAddABookUsingProxy() {
+    Book book = new Book();
+
+    book.title = DEFAULT_TITLE;
+    book.author = DEFAULT_AUTHOR;
+    book.yearOfPublication = DEFAULT_YEAR_OF_PUBLICATION;
+    book.nbOfPages = DEFAULT_NB_OF_PAGES;
+    book.rank = DEFAULT_RANK;
+    book.price = DEFAULT_PRICE;
+    book.smallImageUrl = DEFAULT_SMALL_IMAGE_URL;
+    book.mediumImageUrl = DEFAULT_MEDIUM_IMAGE_URL;
+    book.description = DEFAULT_DESCRIPTION;
+// Persists a new book
+    String location =
+      given()
+        .body(book)
+        .header(CONTENT_TYPE, APPLICATION_JSON)
+        .header(ACCEPT, APPLICATION_JSON).
+        when()
+        .post("/api/books").
+        then()
+        .statusCode(CREATED.getStatusCode())
+        .extract().header("Location");
+// Extracts the Location and stores the book id
+    assertTrue(location.contains("/api/books"));
+    String[] segments = location.split("/");
+    bookId = segments[segments.length - 1];
+    assertNotNull(bookId);
+// Checks the book has been created
+    given()
+      .header(ACCEPT, APPLICATION_JSON)
+      .pathParam("id", bookId).
+      when()
+      .get("/api/books/{id}").
+      then()
+      .statusCode(OK.getStatusCode())
+      .header(CONTENT_TYPE, APPLICATION_JSON)
+      .body("title", Is.is(DEFAULT_TITLE))
+      .body("$", hasKey("isbn13"))
+      .body("$", hasKey("isbn10"))
+      .body("author", Is.is(DEFAULT_AUTHOR))
+      .body("yearOfPublication", Is.is(DEFAULT_YEAR_OF_PUBLICATION))
+      .body("nbOfPages", Is.is(DEFAULT_NB_OF_PAGES))
+      .body("rank", Is.is(DEFAULT_RANK))
+      .body("smallImageUrl", Is.is(DEFAULT_SMALL_IMAGE_URL.toString()))
+      .body("mediumImageUrl", Is.is(DEFAULT_MEDIUM_IMAGE_URL.toString()))
+      .body("description", Is.is(DEFAULT_DESCRIPTION));
+// Checks there is an extra book in the database
+    List<Book> books =
+      given().header(ACCEPT, APPLICATION_JSON).
+        when()
+        .get("/api/books").
+        then()
+        .statusCode(OK.getStatusCode())
+        .header(CONTENT_TYPE, APPLICATION_JSON)
+        .extract().body().as(getBookTypeRef());
+    assertEquals(nbBooks + 1, books.size());
   }
 
   private TypeRef<List<Book>> getBookTypeRef() {
