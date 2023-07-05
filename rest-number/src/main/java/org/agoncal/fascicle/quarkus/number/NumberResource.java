@@ -2,6 +2,9 @@ package org.agoncal.fascicle.quarkus.number;
 
 import com.github.javafaker.Faker;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -30,11 +33,12 @@ public class NumberResource {
   int secondsToSleep = 0;
 
   @GET
-  @Timeout(250)
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Generates book numbers", description = "These book numbers have several formats: ISBN, ASIN and EAN")
   @APIResponse(responseCode = "200", content = @Content(mediaType = MediaType
     .APPLICATION_JSON, schema = @Schema(implementation = BookNumbers.class)))
+  @Counted(name = "countGenerateNumbers", description = "Counts how many times the generateNumbers method has been invoked")
+  @Timed(name = "timeCountGenerateNumbers", description = "Times how long it takes to invoke the generateNumbers method", unit = MetricUnits.MILLISECONDS)
   public Response generateBookNumbers() throws InterruptedException {
 
     LOGGER.info("Waiting for " + secondsToSleep + " seconds");
@@ -55,7 +59,9 @@ public class NumberResource {
 
   @GET
   @Produces(MediaType.TEXT_PLAIN)
+  @Path("/ping")
   public String hello() {
-    return "Hello RESTEasy";
+    return "hello";
   }
+
 }

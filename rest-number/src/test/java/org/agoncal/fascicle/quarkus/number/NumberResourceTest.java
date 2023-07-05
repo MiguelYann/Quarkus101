@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.core.MediaType;
 
+import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_JSON;
 import static io.restassured.RestAssured.given;
 import static javax.ws.rs.core.Response.Status.OK;
 import static org.hamcrest.CoreMatchers.is;
@@ -16,15 +17,6 @@ import static org.jboss.resteasy.util.HttpHeaderNames.ACCEPT;
 @QuarkusTest
 public class NumberResourceTest {
 
-  @Test
-  public void testApiEndpointWithTextPlain() {
-    given()
-      .header(ACCEPT, MediaType.TEXT_PLAIN)
-      .when().get("/api/numbers")
-      .then()
-      .statusCode(200)
-      .body(is("Hello RESTEasy"));
-  }
 
   @Test
   void shouldGenerateBookNumber() {
@@ -40,6 +32,35 @@ public class NumberResourceTest {
       .body("$", hasKey("ean_8"))
       .body("$", hasKey("ean_13"))
       .body("$", not(hasKey("generationDate")));
+  }
+
+  @Test
+  void shouldPingLiveness() {
+    given()
+      .header(ACCEPT, APPLICATION_JSON).
+      when()
+      .get("/q/health/live").
+      then()
+      .statusCode(OK.getStatusCode());
+  }
+  @Test
+  void shouldPingReadiness() {
+    given()
+      .header(ACCEPT, APPLICATION_JSON).
+      when()
+      .get("/q/health/ready").
+      then()
+      .statusCode(OK.getStatusCode());
+  }
+
+  @Test
+  void shouldPingMetrics() {
+    given()
+      .header(ACCEPT, MediaType.APPLICATION_JSON).
+      when()
+      .get("/q/metrics/application").
+      then()
+      .statusCode(OK.getStatusCode());
   }
 
 }

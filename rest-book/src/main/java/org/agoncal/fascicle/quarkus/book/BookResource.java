@@ -5,6 +5,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -91,8 +94,10 @@ public class BookResource {
 
   @Operation(summary = "Creates a valid book")
   @APIResponse(responseCode = "201", description = "The URI of the created book",
-    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema
+  content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema
       (implementation = URI.class)))
+  @Counted(name = "countCreateBook", description = "Counts how many times the createBook method has been invoked")
+  @Timed(name = "timeCreateBook", description = "Times how long it takes to invoke the createBook method", unit = MetricUnits.MILLISECONDS)
   @POST
   public Response createBook(@RequestBody(required = true, content = @Content(mediaType
     = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Book.class))) @Valid
@@ -107,6 +112,8 @@ public class BookResource {
   @APIResponse(responseCode = "200", description = "The updated book", content =
   @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation =
     Book.class)))
+  @Counted(name = "countUpdateBook", description = "Counts how many times the updateBook method has been invoked")
+  @Timed(name = "timeUpdateBook", description = "Times how long it takes to invoke the updateBook method", unit = MetricUnits.MILLISECONDS)
   @PUT
   public Response updateBook(@RequestBody(required = true, content = @Content(mediaType
     = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Book.class))) @Valid
@@ -125,5 +132,12 @@ public class BookResource {
     service.deleteBook(id);
     LOGGER.debug("Book deleted with " + id);
     return Response.noContent().build();
+  }
+
+  @GET
+  @Produces(MediaType.TEXT_PLAIN)
+  @Path("/ping")
+  public String hello() {
+    return "hello";
   }
 }

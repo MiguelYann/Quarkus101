@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import javax.ws.rs.core.MediaType;
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -279,6 +280,37 @@ public class BookResourceTest {
         .extract().body().as(getBookTypeRef());
     assertEquals(nbBooks + 1, books.size());
   }
+
+  @Test
+  void shouldPingLiveness() {
+    given()
+      .header(ACCEPT, APPLICATION_JSON).
+      when()
+      .get("/q/health/live").
+      then()
+      .statusCode(OK.getStatusCode());
+  }
+
+  @Test
+  void shouldPingReadiness() {
+    given()
+      .header(ACCEPT, APPLICATION_JSON).
+      when()
+      .get("/q/health/ready").
+      then()
+      .statusCode(OK.getStatusCode());
+  }
+
+  @Test
+  void shouldPingMetrics() {
+    given()
+      .header(ACCEPT, MediaType.APPLICATION_JSON).
+      when()
+      .get("/q/metrics/application").
+      then()
+      .statusCode(OK.getStatusCode());
+  }
+
 
   private TypeRef<List<Book>> getBookTypeRef() {
     return new TypeRef<List<Book>>() {
